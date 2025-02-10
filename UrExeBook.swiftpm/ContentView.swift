@@ -216,7 +216,7 @@ struct UserInfoView: View {
 
 struct ExerciseSelectionView: View {
     @Binding var selectedTab: Int
-    @FocusState private var isFocused: Bool // 追蹤焦點狀態
+    @FocusState private var isFocused: Bool // 追蹤鍵盤焦點狀態
     
     let exercises = [
         Exercise(name: "Running", image: "figure.run", met: 8.0),
@@ -231,19 +231,18 @@ struct ExerciseSelectionView: View {
     @State private var trainingDetails: String = ""
     @State private var selectedImage: UIImage?
     @State private var isImagePickerPresented = false
-    //@AppStorage("exerciseRecords") private var recordsData: Data = Data()
     
     @AppStorage("userAge") private var age: String = ""
     @AppStorage("userGender") private var gender: String = "Male"
     @AppStorage("userHeight") private var height: String = ""
     @AppStorage("userWeight") private var weight: String = ""
-    
+
     var body: some View {
         VStack(spacing: 20) {
             Text("Select an Exercise")
                 .font(.largeTitle.bold())
                 .padding(.top, 10)
-            
+
             // 選擇運動類型
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 15) {
@@ -268,7 +267,6 @@ struct ExerciseSelectionView: View {
                                         }
                                     )
                             }
-                            
                             .onTapGesture {
                                 withAnimation {
                                     selectedExercise = exercise
@@ -282,70 +280,72 @@ struct ExerciseSelectionView: View {
                 }
                 .padding(.horizontal, 15)
             }
-            
-            // 選擇運動後顯示輸入區域
-            if selectedExercise != nil {
+
+            // **讓畫面可滾動，避免鍵盤擋住**
+            ScrollView {
                 VStack(alignment: .leading, spacing: 15) {
-                    
-                    Text("Exercise Details")
-                        .font(.title2.bold())
-                    
-                    // 調整 TextField 使其與 TextEditor 風格一致
-                    TextField("Duration (minutes)", text: $duration)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.numberPad)
-                        .padding(10) // 讓與 TextEditor 看起來大小相近
-                        .background(Color.gray.opacity(1)) // 加入背景
-                        .cornerRadius(8) // 加上圓角
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.5), lineWidth: 1)) // 邊框
-                    
-                    // 修正: TextEditor + Placeholder
-                    ZStack(alignment: .topLeading) {
-                        TextEditor(text: $trainingDetails)
-                            .frame(height: 150) // 設定 TextEditor 高度
-                            .padding(.leading, 5) // 讓輸入文字與 Placeholder 左對齊
-                            .background(Color.gray.opacity(0.1)) // 增加背景
-                            .cornerRadius(8) // 圓角設計
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.5), lineWidth: 1)) // 邊框
-                            .focused($isFocused) // 讓 TextEditor 受焦點控制
-                        
-                        // **Placeholder**
-                        if trainingDetails.isEmpty && !isFocused {
-                            Text("Enter training details...\nExample:\n- Bench Press: 4 sets x 8 reps (100kg)")
-                                .foregroundColor(.gray)
-                                .padding(.horizontal, 10) // 調整對齊
-                                .padding(.top, 12) // 避免被 TextEditor 擋住
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                    if selectedExercise != nil {
+                        Text("Exercise Details")
+                            .font(.title2.bold())
+
+                        // **輸入運動時間**
+                        TextField("Duration (minutes)", text: $duration)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.numberPad)
+                            .padding(10)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.5), lineWidth: 1))
+                            .focused($isFocused) // 讓鍵盤焦點管理
+
+                        // **訓練內容 TextEditor**
+                        ZStack(alignment: .topLeading) {
+                            TextEditor(text: $trainingDetails)
+                                .frame(height: 150)
+                                .padding(.leading, 5)
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(8)
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.5), lineWidth: 1))
+                                .focused($isFocused)
+
+                            // **Placeholder**
+                            if trainingDetails.isEmpty && !isFocused {
+                                Text("Enter training details...\nExample:\n- Bench Press: 4 sets x 8 reps (100kg)")
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal, 10)
+                                    .padding(.top, 12)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                         }
-                    }
-                    .frame(height: 150) // 統一高度
-                    .padding(.horizontal, 10)
-                    
-                    Button(action: {
-                        isImagePickerPresented = true
-                    }) {
-                        HStack {
-                            Image(systemName: "camera")
-                            Text("Upload Photo")
+                        .frame(height: 150)
+                        .padding(.horizontal, 10)
+
+                        // **上傳圖片按鈕**
+                        Button(action: {
+                            isImagePickerPresented = true
+                        }) {
+                            HStack {
+                                Image(systemName: "camera")
+                                Text("Upload Photo")
+                            }
                         }
+                        .buttonStyle(.bordered)
+                        .frame(maxWidth: .infinity)
+
+                        // **儲存紀錄按鈕**
+                        Button("Save Record") {
+                            saveRecord()
+                            selectedExercise = nil
+                            selectedImage = nil
+                            selectedTab = 2
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button("Save Record") {
-                        saveRecord()
-                        selectedExercise = nil
-                        selectedImage = nil
-                        selectedTab = 2
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .frame(maxWidth: .infinity)
-                    
-                    Spacer()
                 }
                 .padding(.horizontal, 20)
+                .padding(.bottom, 50) // 預留空間，避免鍵盤擋住最後的按鈕
             }
-
             
             Spacer()
         }
@@ -353,31 +353,28 @@ struct ExerciseSelectionView: View {
         .sheet(isPresented: $isImagePickerPresented) {
             ImagePicker(image: $selectedImage)
         }
+        .onTapGesture {
+            hideKeyboard() // **點擊空白處收起鍵盤**
+        }
     }
-    
+
+    /// **收起鍵盤的方法**
+    private func hideKeyboard() {
+        isFocused = false // 讓 `TextField` 和 `TextEditor` 失去焦點
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+
     func saveRecord() {
         guard let durationInt = Int(duration),
               let selectedExercise = selectedExercise,
-              let weightDouble = Double(weight), // 確保轉換體重
-              let heightDouble = Double(height), // 確保轉換身高
-              let ageInt = Int(age) else { return } // 確保轉換年齡
-        
+              let weightDouble = Double(weight),
+              let heightDouble = Double(height),
+              let ageInt = Int(age) else { return }
+
         let timeInHours = Double(durationInt) / 60.0
-        
-        // 依照性別計算 BMR
-        let bmr: Double
-        if gender == "Male" {
-            bmr = 66 + (13.7 * weightDouble) + (5 * heightDouble) - (6.8 * Double(ageInt))
-        } else {
-            bmr = 655 + (9.6 * weightDouble) + (1.8 * heightDouble) - (4.7 * Double(ageInt))
-        }
-        
-        // 計算運動卡路里
         let caloriesBurned = selectedExercise.met * weightDouble * timeInHours
-        
-        // 壓縮圖片
         let imageData = selectedImage?.jpegData(compressionQuality: 0.8)
-        
+
         let newRecord = ExerciseRecord(
             id: UUID(),
             name: selectedExercise.name,
@@ -387,22 +384,20 @@ struct ExerciseSelectionView: View {
             timestamp: Date(),
             trainingDetails: trainingDetails
         )
-        
+
         var records = loadRecordsFromFile()
         records.append(newRecord)
-        
-        // 嘗試存入檔案系統
         saveRecordsToFile(records)
-        
+
         // 清空 UI
         selectedImage = nil
         trainingDetails = ""
     }
-    
+
     func saveRecordsToFile(_ records: [ExerciseRecord]) {
         let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
             .first!.appendingPathComponent("exerciseRecords.json")
-        
+
         do {
             let data = try JSONEncoder().encode(records)
             try data.write(to: fileURL, options: .atomic)
@@ -411,12 +406,11 @@ struct ExerciseSelectionView: View {
             print("❌ Failed to save records:", error)
         }
     }
-    
-    
+
     func loadRecordsFromFile() -> [ExerciseRecord] {
         let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
             .first!.appendingPathComponent("exerciseRecords.json")
-        
+
         do {
             let data = try Data(contentsOf: fileURL)
             return try JSONDecoder().decode([ExerciseRecord].self, from: data)
@@ -425,8 +419,8 @@ struct ExerciseSelectionView: View {
             return []
         }
     }
-    
 }
+
 
 struct KeyboardDismissModifier: ViewModifier {
     func body(content: Content) -> some View {
